@@ -88,14 +88,13 @@ export class GestureRecognizer extends
    *     Note that either a path to the model asset or a model buffer needs to
    *     be provided (via `baseOptions`).
    */
-  static async createFromOptions(
+  static createFromOptions(
       wasmFileset: WasmFileset,
       gestureRecognizerOptions: GestureRecognizerOptions):
       Promise<GestureRecognizer> {
-    const recognizer = await VisionTaskRunner.createInstance(
-        GestureRecognizer, /* initializeCanvas= */ true, wasmFileset);
-    await recognizer.setOptions(gestureRecognizerOptions);
-    return recognizer;
+    return VisionTaskRunner.createInstance(
+        GestureRecognizer, /* initializeCanvas= */ true, wasmFileset,
+        gestureRecognizerOptions);
   }
 
   /**
@@ -108,8 +107,9 @@ export class GestureRecognizer extends
   static createFromModelBuffer(
       wasmFileset: WasmFileset,
       modelAssetBuffer: Uint8Array): Promise<GestureRecognizer> {
-    return GestureRecognizer.createFromOptions(
-        wasmFileset, {baseOptions: {modelAssetBuffer}});
+    return VisionTaskRunner.createInstance(
+        GestureRecognizer, /* initializeCanvas= */ true, wasmFileset,
+        {baseOptions: {modelAssetBuffer}});
   }
 
   /**
@@ -119,13 +119,12 @@ export class GestureRecognizer extends
    *     Wasm binary and its loader.
    * @param modelAssetPath The path to the model asset.
    */
-  static async createFromModelPath(
+  static createFromModelPath(
       wasmFileset: WasmFileset,
       modelAssetPath: string): Promise<GestureRecognizer> {
-    const response = await fetch(modelAssetPath.toString());
-    const graphData = await response.arrayBuffer();
-    return GestureRecognizer.createFromModelBuffer(
-        wasmFileset, new Uint8Array(graphData));
+    return VisionTaskRunner.createInstance(
+        GestureRecognizer, /* initializeCanvas= */ true, wasmFileset,
+        {baseOptions: {modelAssetPath}});
   }
 
   constructor(
@@ -134,6 +133,7 @@ export class GestureRecognizer extends
     super(wasmModule, glCanvas);
 
     this.options = new GestureRecognizerGraphOptions();
+    this.options.setBaseOptions(new BaseOptionsProto());
     this.handLandmarkerGraphOptions = new HandLandmarkerGraphOptions();
     this.options.setHandLandmarkerGraphOptions(this.handLandmarkerGraphOptions);
     this.handLandmarksDetectorGraphOptions =
@@ -151,11 +151,11 @@ export class GestureRecognizer extends
     this.initDefaults();
   }
 
-  protected override get baseOptions(): BaseOptionsProto|undefined {
-    return this.options.getBaseOptions();
+  protected override get baseOptions(): BaseOptionsProto {
+    return this.options.getBaseOptions()!;
   }
 
-  protected override set baseOptions(proto: BaseOptionsProto|undefined) {
+  protected override set baseOptions(proto: BaseOptionsProto) {
     this.options.setBaseOptions(proto);
   }
 
@@ -257,8 +257,9 @@ export class GestureRecognizer extends
     this.worldLandmarks = [];
     this.handednesses = [];
 
-    this.addGpuBufferAsImageToStream(imageSource, IMAGE_STREAM, timestamp);
-    this.addProtoToStream(
+    this.graphRunner.addGpuBufferAsImageToStream(
+        imageSource, IMAGE_STREAM, timestamp);
+    this.graphRunner.addProtoToStream(
         FULL_IMAGE_RECT.serializeBinary(), 'mediapipe.NormalizedRect',
         NORM_RECT_STREAM, timestamp);
     this.finishProcessing();
@@ -365,18 +366,22 @@ export class GestureRecognizer extends
 
     graphConfig.addNode(recognizerNode);
 
-    this.attachProtoVectorListener(LANDMARKS_STREAM, binaryProto => {
-      this.addJsLandmarks(binaryProto);
-    });
-    this.attachProtoVectorListener(WORLD_LANDMARKS_STREAM, binaryProto => {
-      this.adddJsWorldLandmarks(binaryProto);
-    });
-    this.attachProtoVectorListener(HAND_GESTURES_STREAM, binaryProto => {
-      this.gestures.push(...this.toJsCategories(binaryProto));
-    });
-    this.attachProtoVectorListener(HANDEDNESS_STREAM, binaryProto => {
-      this.handednesses.push(...this.toJsCategories(binaryProto));
-    });
+    this.graphRunner.attachProtoVectorListener(
+        LANDMARKS_STREAM, binaryProto => {
+          this.addJsLandmarks(binaryProto);
+        });
+    this.graphRunner.attachProtoVectorListener(
+        WORLD_LANDMARKS_STREAM, binaryProto => {
+          this.adddJsWorldLandmarks(binaryProto);
+        });
+    this.graphRunner.attachProtoVectorListener(
+        HAND_GESTURES_STREAM, binaryProto => {
+          this.gestures.push(...this.toJsCategories(binaryProto));
+        });
+    this.graphRunner.attachProtoVectorListener(
+        HANDEDNESS_STREAM, binaryProto => {
+          this.handednesses.push(...this.toJsCategories(binaryProto));
+        });
 
     const binaryGraph = graphConfig.serializeBinary();
     this.setGraph(new Uint8Array(binaryGraph), /* isBinary= */ true);
