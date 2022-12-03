@@ -6,6 +6,8 @@ input_stream: "input_video"
 # GPU image with rendered results. (GpuBuffer)
 output_stream: "output_video"
 
+output_stream: "right_hand_landmarks"
+
 # Throttles the images flowing downstream for flow control. It passes through
 # the very first incoming image unaltered, and waits for downstream nodes
 # (calculators and subgraphs) in the graph to finish their tasks before it

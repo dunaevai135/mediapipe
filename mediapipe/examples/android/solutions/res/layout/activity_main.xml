@@ -4,37 +4,67 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
+
     <LinearLayout
         android:id="@+id/buttons"
+        style="?android:attr/buttonBarStyle"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        style="?android:attr/buttonBarStyle" android:gravity="center"
+        android:layout_height="35dp"
+        android:gravity="center"
         android:orientation="horizontal">
+
         <Button
             android:id="@+id/button_load_picture"
+            style="?android:attr/buttonBarButtonStyle"
             android:layout_width="wrap_content"
-            style="?android:attr/buttonBarButtonStyle" android:layout_height="wrap_content"
+            android:layout_height="wrap_content"
             android:text="@string/load_picture" />
+
         <Button
             android:id="@+id/button_load_video"
+            style="?android:attr/buttonBarButtonStyle"
             android:layout_width="wrap_content"
-            style="?android:attr/buttonBarButtonStyle" android:layout_height="wrap_content"
+            android:layout_height="wrap_content"
             android:text="@string/load_video" />
+
         <Button
             android:id="@+id/button_start_camera"
+            style="?android:attr/buttonBarButtonStyle"
             android:layout_width="wrap_content"
-            style="?android:attr/buttonBarButtonStyle" android:layout_height="wrap_content"
+            android:layout_height="wrap_content"
             android:text="@string/start_camera" />
     </LinearLayout>
-    <FrameLayout
-        android:id="@+id/preview_display_layout"
+
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:gravity="center">
+
         <TextView
-            android:id="@+id/no_view"
+            android:id="@+id/pars"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="60dp"
+            android:textSize="50sp"
             android:gravity="center"
-            android:text="@string/instruction" />
-    </FrameLayout>
+            android:elevation="10dp"
+            android:shadowColor="@color/cardview_light_background"
+            android:shadowRadius="5"
+            android:text="no" />
+
+        <FrameLayout
+            android:id="@+id/preview_display_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <TextView
+                android:id="@+id/no_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="@string/instruction" />
+        </FrameLayout>
+    </RelativeLayout>
+
 </LinearLayout>

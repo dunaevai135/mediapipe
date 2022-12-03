@@ -34,6 +34,14 @@ import com.google.mediapipe.components.PermissionHelper;
 import com.google.mediapipe.framework.AndroidAssetUtil;
 import com.google.mediapipe.glutil.EglManager;
 
+import com.google.mediapipe.formats.proto.LandmarkProto.NormalizedLandmark;
+import com.google.mediapipe.formats.proto.LandmarkProto.NormalizedLandmarkList;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+
 /** Main activity of MediaPipe basic app. */
 public class MainActivity extends AppCompatActivity {
   private static final String TAG = "MainActivity";
@@ -117,6 +125,48 @@ public class MainActivity extends AppCompatActivity {
             applicationInfo.metaData.getBoolean("flipFramesVertically", FLIP_FRAMES_VERTICALLY));
 
     PermissionHelper.checkAndRequestCameraPermissions(this);
+
+    processor.addPacketCallback(
+            "right_hand_landmarks",
+            (packet) -> {
+              Log.v(TAG, "Received landmarks packet.");
+              List<NormalizedLandmarkList> multiHandLandmarks =
+                      PacketGetter.getProtoVector(packet, NormalizedLandmarkList.parser());
+              Log.v(
+                      TAG,
+                      "[TS:"
+                              + packet.getTimestamp()
+                              + "] "
+                              + getMultiHandLandmarksDebugString(multiHandLandmarks));
+            });
+  }
+
+  private String getMultiHandLandmarksDebugString(List<NormalizedLandmarkList> multiHandLandmarks) {
+    if (multiHandLandmarks.isEmpty()) {
+      return "No hand landmarks";
+    }
+    String multiHandLandmarksStr = "Number of hands detected: " + multiHandLandmarks.size() + "\n";
+    int handIndex = 0;
+    for (NormalizedLandmarkList landmarks : multiHandLandmarks) {
+      multiHandLandmarksStr +=
+              "\t#Hand landmarks for hand[" + handIndex + "]: " + landmarks.getLandmarkCount() + "\n";
+      int landmarkIndex = 0;
+      for (NormalizedLandmark landmark : landmarks.getLandmarkList()) {
+        multiHandLandmarksStr +=
+                "\t\tLandmark ["
+                        + landmarkIndex
+                        + "]: ("
+                        + landmark.getX()
+                        + ", "
+                        + landmark.getY()
+                        + ", "
+                        + landmark.getZ()
+                        + ")\n";
+        ++landmarkIndex;
+      }
+      ++handIndex;
+    }
+    return multiHandLandmarksStr;
   }
 
   // Used to obtain the content view for this application. If you are extending this class, and
